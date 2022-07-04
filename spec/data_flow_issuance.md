@@ -103,7 +103,7 @@ is the ```prover_did``` the peer DID of the holder?
 The [[ref:issuer]] sends the [[ref:Credential Request]] to the [[ref:issuer]] (step 9), who then can reply to the [[ref:holder]] by sending an issued credential.
 
 
-#### Issue Credential
+#### Issue Credential without revocation
 
 After the [[ref:issuer]] received the [[ref:Credential Request]] from the [[ref:holder]], the [[ref:issuer]] processes the [[ref:Credential Request]] and decides whether to issue the credential as requested in the [[ref:Credential Request]] to the [[ref:holder]]. 
 
@@ -138,7 +138,7 @@ In case the [[ref:issuer]] decides to issue the requested credential to the [[re
 - check how exactly the signing happens for the whole credential
 :::
 
-The [[ref:issuer]] has to transmit the whole credential data to the [[ref:holder]] as follows:
+The [[ref:issuer]] has to transmit the whole credential data to the [[ref:holder]] as follows (the shown data is based on a credential that has revocation not activated):
 
 
 ```json
@@ -202,9 +202,8 @@ The [[ref:issuer]] has to transmit the whole credential data to the [[ref:holder
 * `cred_def_id`: The ID of the [[ref:CRED_DEF]] on which the [[ref:Credential]] issued is based.
 * `values`: The raw and encoded credential attribute values as JSON (cred_values_json).
 * `signature`: The signatures of the separately signed attributes
+  * `p_credential`: The primary credential that includes all credential values
 * `signature_correctness_proof`: The signature correctness proof of the signature for the whole credential data.
-* `rev_reg`: The revocation registry ID of the revocation registry, the issued credentials is assigned.
-* `witness`: Witness information. (See Revocation)
 
 :::todo
 - Add description for remaining keys of json shown above
@@ -215,3 +214,56 @@ The [[ref:issuer]] has to transmit the whole credential data to the [[ref:holder
 :::
 
 After the [[ref:issuer]] sent the credential data to the [[ref:holder]] (step 12), the [[ref:holder]] can accept and store the credential within his wallet (step 13). The credential issuance flow is completed at this point.
+
+#### Issue Credential with revocation
+If revocation has been enabled in the credential definition further steps are necessary during the issuance flow of a credential with revocation. This means that in addition to the described flow in [issuer setup](data_flow_issuance.md#issue-credential-without-revocation) section a seperate revocation credential has to be created as well as related information for revocation verification.
+
+1. ...
+2. ...
+3. ...
+4. ...
+5. ...
+6. ...
+7. The [[ref:issuer]] has to add the ```accumulator``` value (for which an index from the related ```tails file``` was taken) and the ```wittness value``` which both need to be published. In the existing Hyperledger Indy implementation of AnonCreds those values are published on the ledger. [TODO: add ref to revocation]
+8. The [[ref:issuer]] has to create a non revocation credential signature ```r_credential``` 
+9. The [[ref:issuer]] must publish a revocation registry entry on the Ledger [TODO: add ref to revocation]
+10. The [[ref:issuer]] has to sign each attribute value and the the blinded [[ref:link secret]] by using the corresponding private key for each attribute as defined in the private part of the [[ref:CRED_DEF]] earlier.
+
+The [[ref:issuer]] has to transmit the whole credential data to the [[ref:holder]] as follows (the shown data is based on a credential that has revocation activated):
+```json
+{
+    "schema_id": string,
+    "cred_def_id": string,
+    "rev_reg_id": string,
+    "values": {...},
+    "signature": {
+        "p_credential": {...},
+        "r_credential": {
+            "sigma": "1 15518248A4B5ED5C71D60FFF3D91E60221A8D22FD7A84B07CA088627552476FD 1 18ED7014061EFBC67584F8885EF2185F1957EF217A3939724D92871BF7780433 2 095E45DDF417D05FB10933FFC63D474548B7FFFF7888802F07FFFFFF7D07A8A8",
+            "c": "142B1A89E4657EFD888548A840888B92F42DC8F2F88F55FC19E72B6F4F316AA5",
+            "vr_prime_prime": "1076AA813251B83AB2606D995646E2CC3B754CCEF63FD8379973BA69B3D02900",
+            "witness_signature": {
+                "sigma_i": "1 18A415A1CFB0B4CFAB5E2FB2DAD539F7B321002935CB78B45B0F0F1085E881FE 1 0CB32E3790CA7F59243F5636A02A10E14F3FBE5374A82E5DAC3FDF56FD8DE852 1 00651A6FA54977BBD1ACCC09616AAF61CEAB10E21D5436EF80A63E1FA7A1C0F9 1 0B9A4D51A09B17AE2431DCE7E1DAA74E1DBBD08161543A4A2BE2BDD59A278A7B 2 095E45DDF417D05FB10933FFC63D474548B7FFFF7888802F07FFFFFF7D07A8A8 1 0000000000000000000000000000000000000000000000000000000000000000",
+                "u_i": "1 05421512170D3E432A85A5F59C9FFE995A64C533E1F5DBFF3526F4717D998897 1 251E8140D1AE342112EE237C2257D554AD0A2D97588D42A3EB7A2C20B719A368 1 1F0059E8FC2051D4388CF16F2F5452639AD521C70E499B0E64A93932EC1FD897 1 173B52089498AF197B8F5CF01F9A380A61210A31E9EDDDB444BB1B88C2745D30 2 095E45DDF417D05FB10933FFC63D474548B7FFFF7888802F07FFFFFF7D07A8A8 1 0000000000000000000000000000000000000000000000000000000000000000",
+                "g_i": "1 0FC61615A31975C74D052AC7E246A556FC6D4696C58636B7BA432C4974AF466A 1 038384CCFECD93EBC74AE497B5C59C5A1DFC75874214299690139347BCC09B29 2 095E45DDF417D05FB10933FFC63D474548B7FFFF7888802F07FFFFFF7D07A8A8"
+            },
+            "g_i": "1 0FC61615A31975C74D052AC7E246A556FC6D4696C58636B7BA432C4974AF466A 1 038384CCFECD93EBC74AE497B5C59C5A1DFC75874214299690139347BCC09B29 2 095E45DDF417D05FB10933FFC63D474548B7FFFF7888802F07FFFFFF7D07A8A8",
+            "i": 1,
+            "m2": "B668E0077478C6F6917F8B9A74F4DD73FC59007ACD8A0400D6A351A17501A340"
+        }
+    },
+    "signature_correctness_proof": {...},
+    "rev_reg": {
+        "accum": "21 13DA29474FD59E4EC67972E1011683FBC7E29A4D84B471175E3DE0D6CA8614D8C 21 126294F88CFC2EDD4AB903E902CA89317524561C33AB3F8CCD1AF4EF37FFF61E5 6 640A166EAB12C87ECE0FFCFC1BB3F7F72571394592CF2642E771F2F64E2E2C6B 4 09DA376CB961CCC9746010A0EE4F160E2B5824B867BAE4439325ABD8BD40838C 6 79919234373422F54EFEA42DFB2A097352B9559E810DD50F0B8F6DC8F172F774 4 3CB1441C0F8DA480066096A2EB6CD4A3DD6AB004305E9990D31D39C3C30F326D"
+    },
+    "witness": {
+        "omega": "21 13381DCAB0C6BD5988B1960D7B66F66582F47B44679D5D8673867ED3784DAF87A 21 1383A484A08E39DFD04CBE5C823D2B3E272F7250755C082E74DD118E91E12DB7F 6 8454CF94F3BA261605200CC69C47641BEAA67CEDE51DEDB2117758C6CACF6800 4 1F3B0E14082B3B1D6824FCE4CCAE671FD9E3686C59DE086C2AB9367BF861E508 6 5301D8A820EB55DCA4A3DD6D110C46C560B5A377EF53A36D7C01061B226210A7 4 46C6E745560E23A00062955C3D959EC7FDED4129793512595DFC71167A06B310"
+    }
+}
+```
+
+Additional attributes
+* `signature`
+  * `r_credential`: The revocation credential that includes values for revocation
+* `rev_reg`: The non revocation registry ID of the revocation registry, the issued credentials is assigned. [TODO: add ref to revocation]
+* `witness`: Witness information.  [TODO: add ref to revocation]
